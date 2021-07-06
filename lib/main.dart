@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_upload_animation/MainUI.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(MyApp());
@@ -28,6 +29,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   File _image = new File("");
   final ImagePicker picker = ImagePicker();
+  late Image displayImage;
 
   Future getImage() async {
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
@@ -55,10 +57,10 @@ class _MyHomePageState extends State<MyHomePage> {
             Expanded(child: SizedBox(), flex: 2),
             Expanded(
                 child: CircleAvatar(
+                  //TODO: FIX NULL SAFETY
                   maxRadius: double.maxFinite,
-                  //TODO:update here
                   backgroundImage:
-                      _image.path == "" ? null : Image.file(_image).image,
+                      displayImage == null ? null : displayImage.image,
                   child: _image.path == ""
                       ? SizedBox.fromSize(
                           size: Size.fromRadius(double.maxFinite),
@@ -83,13 +85,18 @@ class _MyHomePageState extends State<MyHomePage> {
                         await getImage();
 
                         if (_image.path != '') {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => ImageUpload(
-                                        newImage: _image,
-                                      )));
+                          displayImage = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ImageUpload(
+                                newImage: _image,
+                              ),
+                            ),
+                          );
                         }
+                        setState(() {
+                          var set = displayImage;
+                        });
                       },
                       child: Text(
                         "Upload Pic",

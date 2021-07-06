@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_upload_animation/MainUI.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:screenshot/screenshot.dart';
 
 class ImageUpload extends StatefulWidget {
   const ImageUpload({required this.newImage});
@@ -13,17 +15,26 @@ class ImageUpload extends StatefulWidget {
   _ImageUploadState createState() => _ImageUploadState();
 }
 
-//TODO: store and collect image from storage
-//TODO: upload image to the disk
-
 class _ImageUploadState extends State<ImageUpload> {
+  //used to hold the image
   late File localImage;
   final ImagePicker picker = ImagePicker();
+
+  //used to drag image
   double x = 0.0;
   double y = 0.0;
+
+  //used in animation to make the image circular
   int containerRadius = 30;
+
+  //used in upload button animation
   double buttonColorWidth = 0;
   String buttonDisplay = "Upload Photo";
+
+  //used to convert widget to image
+  ScreenshotController screenshotController = ScreenshotController();
+  //stores return image
+  late Image finalImage;
 
   Future getImage() async {
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
@@ -41,6 +52,16 @@ class _ImageUploadState extends State<ImageUpload> {
     setState(() {
       containerRadius = 160;
       buttonColorWidth = 500;
+    });
+  }
+
+  Future _cropImage() async {
+    await screenshotController
+        .capture(delay: const Duration(milliseconds: 10))
+        .then((Uint8List? image) async {
+      if (image != null) {
+        finalImage = Image.memory(image);
+      }
     });
   }
 
@@ -86,61 +107,64 @@ class _ImageUploadState extends State<ImageUpload> {
                         flex: 9,
                         child: AspectRatio(
                           aspectRatio: 1,
-                          child: AnimatedContainer(
-                            duration: Duration(seconds: 1),
-                            child: GestureDetector(
-                              onVerticalDragUpdate: (val) {
-                                setState(() {
-                                  double percentage = val.delta.dy / 100;
-                                  double totalShift = percentage * -1;
-                                  if (totalShift > 0) {
-                                    if (y + totalShift > 1)
-                                      y = 1;
-                                    else
-                                      y = y + totalShift;
-                                  } else if (totalShift < 0) {
-                                    if (y + totalShift < -1)
-                                      y = -1;
-                                    else
-                                      y = y + totalShift;
-                                  }
-                                });
-                              },
-                              onHorizontalDragUpdate: (val) {
-                                setState(() {
-                                  double percentage = val.delta.dx / 100;
-                                  double totalShift = percentage * -1;
-                                  if (totalShift > 0) {
-                                    if (x + totalShift > 1)
-                                      x = 1;
-                                    else
-                                      x = x + totalShift;
-                                  } else if (totalShift < 0) {
-                                    if (x + totalShift < -1)
-                                      x = -1;
-                                    else
-                                      x = x + totalShift;
-                                  }
-                                });
-                              },
-                              child: AnimatedClipRRect(
-                                duration: Duration(seconds: 1),
-                                borderRadius: BorderRadius.circular(
-                                    containerRadius.toDouble()),
-                                child: FittedBox(
-                                  child: Image.file(
-                                    localImage,
+                          child: Screenshot(
+                            controller: screenshotController,
+                            child: AnimatedContainer(
+                              duration: Duration(seconds: 1),
+                              child: GestureDetector(
+                                onVerticalDragUpdate: (val) {
+                                  setState(() {
+                                    double percentage = val.delta.dy / 100;
+                                    double totalShift = percentage * -1;
+                                    if (totalShift > 0) {
+                                      if (y + totalShift > 1)
+                                        y = 1;
+                                      else
+                                        y = y + totalShift;
+                                    } else if (totalShift < 0) {
+                                      if (y + totalShift < -1)
+                                        y = -1;
+                                      else
+                                        y = y + totalShift;
+                                    }
+                                  });
+                                },
+                                onHorizontalDragUpdate: (val) {
+                                  setState(() {
+                                    double percentage = val.delta.dx / 100;
+                                    double totalShift = percentage * -1;
+                                    if (totalShift > 0) {
+                                      if (x + totalShift > 1)
+                                        x = 1;
+                                      else
+                                        x = x + totalShift;
+                                    } else if (totalShift < 0) {
+                                      if (x + totalShift < -1)
+                                        x = -1;
+                                      else
+                                        x = x + totalShift;
+                                    }
+                                  });
+                                },
+                                child: AnimatedClipRRect(
+                                  duration: Duration(seconds: 1),
+                                  borderRadius: BorderRadius.circular(
+                                      containerRadius.toDouble()),
+                                  child: FittedBox(
+                                    child: Image.file(
+                                      localImage,
+                                    ),
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment(x, y),
+                                    clipBehavior: Clip.none,
                                   ),
-                                  fit: BoxFit.cover,
-                                  alignment: Alignment(x, y),
-                                  clipBehavior: Clip.none,
                                 ),
                               ),
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(
-                                  containerRadius.toDouble()),
-                              color: Colors.white,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                    containerRadius.toDouble()),
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         )),
@@ -179,12 +203,14 @@ class _ImageUploadState extends State<ImageUpload> {
                             ),
                           ),
                         ),
-                        onPressed: () {
-                          //todo:crop and store image
+                        onPressed: () async {
+                          await _cropImage();
                           setState(() {
                             buttonDisplay = "Uploading...";
                           });
                           _updateAnimations();
+                          await Future.delayed(Duration(seconds: 3));
+                          Navigator.pop(context, finalImage);
                         },
                         child: Center(
                           child: Text(buttonDisplay,
