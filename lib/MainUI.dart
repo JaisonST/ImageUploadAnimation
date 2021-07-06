@@ -1,17 +1,41 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_upload_animation/MainUI.dart';
 
 class ImageUpload extends StatefulWidget {
+  const ImageUpload({required this.newImage});
+  final File newImage;
   @override
   _ImageUploadState createState() => _ImageUploadState();
 }
 
 //TODO: store and collect image from storage
-//TODO: get image from disk
 //TODO: upload image to the disk
 //TODO: create the image move ability
 //TODO: create the uploading animation
 
 class _ImageUploadState extends State<ImageUpload> {
+  late File localImage;
+  final ImagePicker picker = ImagePicker();
+
+  Future getImage() async {
+    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    setState(() {
+      if (pickedFile != null) {
+        localImage = File(pickedFile.path);
+      } else {
+        print('No image selected.');
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    localImage = widget.newImage;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,6 +71,13 @@ class _ImageUploadState extends State<ImageUpload> {
                         child: AspectRatio(
                           aspectRatio: 1,
                           child: Container(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(30),
+                              child: FittedBox(
+                                child: Image.file(localImage),
+                                fit: BoxFit.fill,
+                              ),
+                            ),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(30),
                               color: Colors.white,
@@ -83,9 +114,14 @@ class _ImageUploadState extends State<ImageUpload> {
             Expanded(
                 child: Center(
                   //TODO: change to text button
-                  child: Text(
-                    "Choose Another?",
-                    style: TextStyle(color: Colors.white),
+                  child: TextButton(
+                    child: Text(
+                      "Choose Another?",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () async {
+                      await getImage();
+                    },
                   ),
                 ),
                 flex: 2),

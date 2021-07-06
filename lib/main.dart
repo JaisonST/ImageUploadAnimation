@@ -1,5 +1,6 @@
 import 'dart:ui';
-
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_upload_animation/MainUI.dart';
 
@@ -24,6 +25,20 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  File _image = new File("");
+  final ImagePicker picker = ImagePicker();
+
+  Future getImage() async {
+    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    setState(() {
+      if (pickedFile != null) {
+        _image = File(pickedFile.path);
+      } else {
+        print('No image selected.');
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,6 +55,18 @@ class _MyHomePageState extends State<MyHomePage> {
             Expanded(
                 child: CircleAvatar(
                   maxRadius: double.maxFinite,
+                  //TODO:update here
+                  backgroundImage: _image.path == "" ? null : null,
+                  child: _image.path == ""
+                      ? SizedBox.fromSize(
+                          size: Size.fromRadius(double.maxFinite),
+                          child: FittedBox(
+                            child: Icon(
+                              Icons.account_circle,
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
                 flex: 3),
             Expanded(
@@ -50,11 +77,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       style: ButtonStyle(
                           backgroundColor: MaterialStateProperty.all<Color>(
                               Colors.orangeAccent)),
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ImageUpload()));
+                      onPressed: () async {
+                        await getImage();
+
+                        if (_image.path != '') {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ImageUpload(
+                                        newImage: _image,
+                                      )));
+                        }
                       },
                       child: Text(
                         "Upload Pic",
