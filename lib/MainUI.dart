@@ -15,13 +15,15 @@ class ImageUpload extends StatefulWidget {
 
 //TODO: store and collect image from storage
 //TODO: upload image to the disk
-//TODO: create the uploading animation
 
 class _ImageUploadState extends State<ImageUpload> {
   late File localImage;
   final ImagePicker picker = ImagePicker();
   double x = 0.0;
   double y = 0.0;
+  int containerRadius = 30;
+  double buttonColorWidth = 0;
+  String buttonDisplay = "Upload Photo";
 
   Future getImage() async {
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
@@ -32,6 +34,13 @@ class _ImageUploadState extends State<ImageUpload> {
         print('No image selected.');
         return;
       }
+    });
+  }
+
+  _updateAnimations() {
+    setState(() {
+      containerRadius = 160;
+      buttonColorWidth = 500;
     });
   }
 
@@ -77,7 +86,8 @@ class _ImageUploadState extends State<ImageUpload> {
                         flex: 9,
                         child: AspectRatio(
                           aspectRatio: 1,
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: Duration(seconds: 1),
                             child: GestureDetector(
                               onVerticalDragUpdate: (val) {
                                 setState(() {
@@ -113,8 +123,10 @@ class _ImageUploadState extends State<ImageUpload> {
                                   }
                                 });
                               },
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(30),
+                              child: AnimatedClipRRect(
+                                duration: Duration(seconds: 1),
+                                borderRadius: BorderRadius.circular(
+                                    containerRadius.toDouble()),
                                 child: FittedBox(
                                   child: Image.file(
                                     localImage,
@@ -126,7 +138,8 @@ class _ImageUploadState extends State<ImageUpload> {
                               ),
                             ),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(
+                                  containerRadius.toDouble()),
                               color: Colors.white,
                             ),
                           ),
@@ -138,32 +151,52 @@ class _ImageUploadState extends State<ImageUpload> {
             Expanded(
               flex: 1,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 20.0),
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor:
-                        MaterialStateProperty.all<Color>(Color(0xff553d83)),
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                      RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(40.0),
-                        //side: BorderSide(color: Colors.black),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(40),
+                  color: Color(0xff553d83),
+                ),
+                margin: EdgeInsets.symmetric(horizontal: 20.0),
+                child: Stack(
+                  children: [
+                    AnimatedContainer(
+                      duration: Duration(seconds: 3),
+                      width: buttonColorWidth,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(40),
+                        color: Colors.greenAccent,
                       ),
                     ),
-                  ),
-                  onPressed: () {
-                    Image a = Image.file(localImage);
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    "Upload Photo",
-                    style: TextStyle(fontSize: 25),
-                  ),
+                    ElevatedButton(
+                        style: ButtonStyle(
+                          elevation: MaterialStateProperty.all<double>(0),
+                          backgroundColor: MaterialStateProperty.all<Color>(
+                              Colors.transparent),
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(40.0),
+                              //side: BorderSide(color: Colors.black),
+                            ),
+                          ),
+                        ),
+                        onPressed: () {
+                          //todo:crop and store image
+                          setState(() {
+                            buttonDisplay = "Uploading...";
+                          });
+                          _updateAnimations();
+                        },
+                        child: Center(
+                          child: Text(buttonDisplay,
+                              style:
+                                  TextStyle(fontSize: 30, color: Colors.white)),
+                        )),
+                  ],
                 ),
               ),
             ),
             Expanded(
                 child: Center(
-                  //TODO: change to text button
                   child: TextButton(
                     child: Text(
                       "Choose Another?",
@@ -178,6 +211,37 @@ class _ImageUploadState extends State<ImageUpload> {
           ],
         ),
       ),
+    );
+  }
+}
+
+//thanks @https://github.com/roughike link: https://github.com/flutter/flutter/issues/43518#issuecomment-681591974
+class AnimatedClipRRect extends StatelessWidget {
+  const AnimatedClipRRect({
+    required this.duration,
+    this.curve = Curves.linear,
+    required this.borderRadius,
+    required this.child,
+  });
+
+  final Duration duration;
+  final Curve curve;
+  final BorderRadius borderRadius;
+  final Widget child;
+
+  static Widget _builder(
+      BuildContext context, BorderRadius radius, Widget? child) {
+    return ClipRRect(borderRadius: radius, child: child);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<BorderRadius>(
+      duration: duration,
+      curve: curve,
+      tween: BorderRadiusTween(begin: BorderRadius.zero, end: borderRadius),
+      builder: _builder,
+      child: child,
     );
   }
 }
