@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_upload_animation/MainUI.dart';
@@ -12,12 +15,13 @@ class ImageUpload extends StatefulWidget {
 
 //TODO: store and collect image from storage
 //TODO: upload image to the disk
-//TODO: create the image move ability
 //TODO: create the uploading animation
 
 class _ImageUploadState extends State<ImageUpload> {
   late File localImage;
   final ImagePicker picker = ImagePicker();
+  double x = 0.0;
+  double y = 0.0;
 
   Future getImage() async {
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
@@ -26,6 +30,7 @@ class _ImageUploadState extends State<ImageUpload> {
         localImage = File(pickedFile.path);
       } else {
         print('No image selected.');
+        return;
       }
     });
   }
@@ -33,7 +38,9 @@ class _ImageUploadState extends State<ImageUpload> {
   @override
   void initState() {
     super.initState();
+
     localImage = widget.newImage;
+    print(localImage.toString());
   }
 
   @override
@@ -71,11 +78,51 @@ class _ImageUploadState extends State<ImageUpload> {
                         child: AspectRatio(
                           aspectRatio: 1,
                           child: Container(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(30),
-                              child: FittedBox(
-                                child: Image.file(localImage),
-                                fit: BoxFit.fill,
+                            child: GestureDetector(
+                              onVerticalDragUpdate: (val) {
+                                setState(() {
+                                  double percentage = val.delta.dy / 100;
+                                  double totalShift = percentage * -1;
+                                  if (totalShift > 0) {
+                                    if (y + totalShift > 1)
+                                      y = 1;
+                                    else
+                                      y = y + totalShift;
+                                  } else if (totalShift < 0) {
+                                    if (y + totalShift < -1)
+                                      y = -1;
+                                    else
+                                      y = y + totalShift;
+                                  }
+                                });
+                              },
+                              onHorizontalDragUpdate: (val) {
+                                setState(() {
+                                  double percentage = val.delta.dx / 100;
+                                  double totalShift = percentage * -1;
+                                  if (totalShift > 0) {
+                                    if (x + totalShift > 1)
+                                      x = 1;
+                                    else
+                                      x = x + totalShift;
+                                  } else if (totalShift < 0) {
+                                    if (x + totalShift < -1)
+                                      x = -1;
+                                    else
+                                      x = x + totalShift;
+                                  }
+                                });
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(30),
+                                child: FittedBox(
+                                  child: Image.file(
+                                    localImage,
+                                  ),
+                                  fit: BoxFit.cover,
+                                  alignment: Alignment(x, y),
+                                  clipBehavior: Clip.none,
+                                ),
                               ),
                             ),
                             decoration: BoxDecoration(
@@ -103,7 +150,10 @@ class _ImageUploadState extends State<ImageUpload> {
                       ),
                     ),
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Image a = Image.file(localImage);
+                    Navigator.pop(context);
+                  },
                   child: Text(
                     "Upload Photo",
                     style: TextStyle(fontSize: 25),

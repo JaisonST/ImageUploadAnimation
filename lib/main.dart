@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_upload_animation/MainUI.dart';
@@ -56,7 +57,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: CircleAvatar(
                   maxRadius: double.maxFinite,
                   //TODO:update here
-                  backgroundImage: _image.path == "" ? null : null,
+                  backgroundImage:
+                      _image.path == "" ? null : Image.file(_image).image,
                   child: _image.path == ""
                       ? SizedBox.fromSize(
                           size: Size.fromRadius(double.maxFinite),
@@ -68,7 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         )
                       : null,
                 ),
-                flex: 3),
+                flex: 5),
             Expanded(
                 flex: 2,
                 child: Container(
